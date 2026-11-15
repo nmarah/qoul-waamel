@@ -47,6 +47,19 @@ input:focus{border-color:var(--blue)}
 .player-list li .pl-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .player-list li .score{color:var(--orange);font-weight:900}
 .player-list li .pl-rm{background:none;border:none;color:var(--red);font-size:1rem;cursor:pointer;padding:2px 6px}
+.targets{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.target-btn{background:var(--card);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 2px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.target-btn b{font-size:1.15rem;color:var(--text)}
+.target-btn small{font-size:.66rem;font-weight:700}
+.target-btn.on{border-color:var(--orange);background:rgba(245,158,11,.14);color:#fbbf24}
+.target-btn.on b{color:#fbbf24}
+.board.dense .board-grid{gap:5px}
+.board.dense .cell{border-radius:9px}
+.board.dense .cell .ico{font-size:.72rem}
+.board.dense .cell.start .ico,.board.dense .cell.finish .ico,.board.dense .cell.surprise .ico{font-size:.9rem}
+.board.dense .tok{width:16px;height:16px;font-size:.55rem;border-width:1.5px}
+.board.dense .cell.many .tok{width:12px;height:12px;font-size:0;border-width:1px}
+.step-text .tgt{color:#fbbf24;font-weight:900}
 .hint{text-align:center;color:var(--muted);font-size:.75rem;margin-top:6px;min-height:1em}
 
 /* اللوحة */
@@ -226,6 +239,8 @@ input:focus{border-color:var(--blue)}
     <div class="saved-title">📒 أسماء محفوظة — اضغط على الاسم لتضيفه</div>
     <div class="chips" id="savedNames"></div>
   </div>
+  <div class="saved-title">🎯 الهدف — كم نقطة لخط النهاية؟</div>
+  <div class="targets" id="targets"></div>
   <ul class="player-list" id="playerList"></ul>
   <button class="btn btn-primary" id="startBtn" disabled>🚀 ابدأ اللعب</button>
   <div class="hint" id="startHint"></div>
@@ -233,11 +248,11 @@ input:focus{border-color:var(--blue)}
 </div>
 
 <div class="screen" id="screenGame">
-  <p class="sub" id="turnInfo" style="margin-top:6px;font-size:.88rem;color:var(--text)">—</p>
+  <p class="sub" id="turnInfo" style="margin-top:6px;font-size:.88rem;color:var(--text);padding:0 46px;line-height:1.5">—</p>
   <div class="event-banner" id="eventBanner"></div>
 
   <div class="board" id="board">
-    <div class="board-head"><span>🗺️ المسار لخط النهاية</span><small>🏁 بداية · ❓ مفاجأة · 🏆 ٢٠</small></div>
+    <div class="board-head"><span>🗺️ المسار لخط النهاية</span><small id="boardLegend"></small></div>
     <div class="board-grid" id="boardGrid"><svg class="board-path" id="boardPath" xmlns="http://www.w3.org/2000/svg"></svg></div>
     <div class="standings" id="standings"></div>
   </div>
@@ -303,13 +318,15 @@ input:focus{border-color:var(--blue)}
   <div class="rules-box">
     <h3>🎯 الهدف</h3>
     <ul>
-      <li>أول لاعب يوصل <b>٢٠ نقطة</b> (خط النهاية 🏆) بيفوز — حتى لو وصلها بمفاجأة أو وهو بيلعب عن غيره.</li>
+      <li>قبل اللعب بتختاروا الهدف: <b>10 · 15 · 20 · 30 · 50</b> نقطة.</li>
+      <li>أول لاعب يوصل <b class="winNum">20</b> نقطة (خط النهاية 🏆) بيفوز — حتى لو وصلها بمفاجأة أو وهو بيلعب عن غيره.</li>
       <li>لازم لاعبين أو أكثر، والأحلى ٣ وفوق.</li>
     </ul>
     <h3>🃏 كيف تلعب؟</h3>
     <ul>
       <li>كل دور اللاعب بيضغط «اسحب بطاقة».</li>
-      <li>التطبيق بيختار <b>عشوائيًا</b> بين <span class="tag">🗣️ قول</span> أو <span class="tag tag-o">🎭 اعمل</span>.</li>
+      <li>التطبيق بيختار بين <span class="tag">🗣️ قول</span> أو <span class="tag tag-o">🎭 اعمل</span> <b>بعدل</b>: كل لاعب بياخد تقريبًا نص قول ونص اعمل، وما بيطلعله نفس النوع ٣ مرات ورا بعض.</li>
+      <li>⚖️ البطاقات اللي فيها اسم لاعب ثاني (اسمه بيطلع بالأصفر) بتختار اللي أقل واحد انذكر — ما في حدا بتعلق عليه كل مرة. ونفس الإشي للبطاقات الخاصة والمفاجآت.</li>
       <li>نفّذ المطلوب أو امتنع.</li>
     </ul>
     <h3>⭐ النقاط</h3>
@@ -347,6 +364,8 @@ input:focus{border-color:var(--blue)}
       <li>🎭 <b>على لاعب</b>: بتختار لاعب ينفّذ تحدي عنك — إذا عمله بياخد +1، وإذا رفض بيخسر نقطة وأنت بتربح نقطة.</li>
       <li>🪞 <b>تصويت</b>: احكي قصة محرجة والباقيين بيصوّتوا — صدقوك +2 · غير هيك 0.</li>
       <li>🎰 <b>قدّر الحظ</b>: التطبيق بيرمي العملة — صورة +2 · كتابة −1.</li>
+      <li>⚔️ <b>مواجهة</b>: إنت ضد لاعب ثاني بتحدي مباشر — الفايز +2 · الخسران −1 · اللي بينسحب −1 وخصمه +1.</li>
+      <li>🌪️ <b>تحدي جماعي</b>: الكل بيشارك — الفايز +2.</li>
     </ul>
     <h3>🗺️ الخريطة والمفاجآت</h3>
     <ul>
@@ -357,8 +376,8 @@ input:focus{border-color:var(--blue)}
     </ul>
     <h3>🌪️ أحداث</h3>
     <ul>
-      <li>أول ما حدا يوصل ١٠ أو مجموع الكل ٣٠: <b>جولة مجنونة</b> — ٣ سحبات اعمل والنقاط ×2.</li>
-      <li>من ١٨ نقطة: النهاية قربت — أول واحد ٢٠ بيتتوّج ملك الجلسة 👑.</li>
+      <li>أول ما حدا يوصل نص الهدف (أو مجموع الكل يوصل مرة ونص الهدف): <b>جولة مجنونة</b> — ٣ سحبات اعمل والنقاط ×2.</li>
+      <li>قبل خط النهاية بشوي (المربعات الحمرا): النهاية قربت — أول واحد بيوصل بيتتوّج ملك الجلسة 👑.</li>
     </ul>
   </div>
   <button class="btn btn-primary" id="backFromRulesBtn">رجوع</button>
@@ -381,11 +400,125 @@ input:focus{border-color:var(--blue)}
 const QOUL=[["احكي عن أغرب شي صار معك بحياتك"],["احكي عن مرة ضحكت في وقت ما لازم تضحك فيه أبدًا"],["مين من الموجودين بتتصور يصرّخ بأبسط موقف؟ وليش؟"],["احكي عن أسوأ ترند أو تحدي على النت جربته وندمت"],["احكي عن أكلة غريبة بتحبها"],["احكي عن مرة اتصلت على حدا بالغلط وارتبكت"],["مين أكتر مغنية أو مغني بتحب تسمعه وشو الأغنية؟"],["احكي عن مرة صحيت من النوم وما عرفت إذا الحلم كان حقيقي ولا لا"],["مين من الموجودين أقرب يصير مشهور؟ بشو؟"],["احكي عن أكتر مرة خفت فيها"],["احكي عن أسوأ بوست أو ستوري نزلتها"],["احكي عن مرة حاولت تبين شاطر بشي وفضحت حالك"],["شو الشي اللي مستحيل تدفع فيه فلس مع أنه غيرك بيشتريه؟"],["احكي عن مرة ضيّعت الطريق وانت مبين إنك واثق إنك عارف الطريق"],["احكي عن أكتر رسالة كتبتها ومسحتها قبل الإرسال"],["مين من الموجودين بتثق فيه يخبي سرك؟"],["احكي عن مرة وقعت أو تزحلقت قدام ناس وحبيت تختفي"],["احكي عن أسوأ كذبة كذبتها"],["شو أكثر عادة غريبة بتعملها لما تكون زهقان لحالك"],["شو أكتر أغنية بتغنيها بالحمام؟"],["احكي عن موقف بالمدرسة أو الشغل لسا بتذكره وتضحك"],["مين من الموجودين أسرع يغضب؟ هات مثال"],["احكي عن أسوأ تجربة مطعم جربتها"],["مين بتحب تعزم معك على مطعم من الموجودين؟"],["شو الخرافة أو القصة اللي كنت مصدقها وأنت صغير؟"],["احكي عن مرة حاولت تصلح شي وخرّبته أكتر"],["احكي عن أكتر مرة فضولك ورّطك"],["مين من الموجودين بتتصور ينام بأي مكان؟"],["احكي عن أغرب نصيحة أخذتها من غريب بالشارع أو التاكسي"],["احكي عن أسوأ توقيت طفى فيك الموبايل أو خلص شحن"],["شو الأكلة اللي لو أكلتها دايمًا بتملّش منها؟"],["احكي عن مرة تمنيت الأرض تنشق وتبلعك"],["احكي عن مرة كنت بتحكي عن حدا وطلع هو جنبك"],["مين من الموجودين أكتر واحد بيضحكك؟"],["احكي عن مرة نمت بالدرس أو الاجتماع"],["احكي عن أسوأ هدية وصلتك"],["شو العادة الغريبة اللي عندك وما بتعترف فيها بسهولة؟"],["احكي عن مرة حاولت تساعد حدا وفشلت قدامه"],["احكي عن مرة بعت رسالة صوتية طويلة وندمت بعدها"],["مين من الموجودين ممكن يتحمل منك مقلب؟"],["احكي عن أكتر مكان بتكره تروحه"],["احكي عن موقف نسيت فيه اسم حدا وأنت بتسلّم"],["شو الشي اللي بتخاف تجربه لحد اليوم؟"],["مع مين بتحب تتصور من الموجودين؟"],["احكي عن مرة حاولت تكون رومانسي وطلعت النتيجة عكسية"],["مين أكتر واحد متردد من الموجودين؟"],["احكي عن أحلى مقلب انعمل عليك أو عملته"],["احكي عن مرة ضيّعت فلوس بطريقة غبية"],["شو أكتر تطبيق بتفتحه بدون ما تحس؟"],["احكي عن مرة حكيت مع حالك والناس سامعين"],["احكي عن موقف خلاك تغيّر رأيك بشخص ١٨٠ درجة"],["مين من الموجودين بتاخده معك جزيرة نائية؟ وليش؟"],["احكي عن مرة حاولت تساعد وصرت أنت المشكلة"],["احكي عن مرة تأخرت كتير على موعد وحطّيت أعذار وهمية"],["شو أكتر كلمة بتحكيها دايمًا؟"],["احكي عن مرة انفضحت والكل سامع مكالمتك"],["احكي عن مرة صدّقت إشاعة وطلعت كذب"],["مين من الموجودين لو حكى نكتة تافهة بتضحك غصب عنك؟"],["احكي عن أكتر مرة ندمت إنك ضغطت إرسال"],["احكي عن مرة تظاهرت إنك فاهم وأنت ضايع"],["شو الشي اللي بتشتريه وما بتحتاجه بس لأنك زهقان؟"],["احكي عن مرة فزّعت أهلك أو أصحابك بدون قصد"],["احكي عن أسوأ مرة جربت موضة أو ستايل"],["مين من الموجودين أكتر واحد ممكن يغامر؟"],["مين أكتر واحد ملتزم بالمواعيد من الموجودين؟"],["احكي عن موقف ضحكت فيه لدرجة دموع"],["شو أكتر كلمة أو إيموجي بتستخدمه زيادة؟"],["احكي عن مرة حاولت تهرب من سؤال محرج ووقعت بأسوأ"],["احكي عن مرة تمنيت ترجع بالزمن ٥ دقايق بس"],["مين من الموجودين أكثر واحد يكذب كذبة بيضاء؟"],["احكي عن أسوأ تجربة طبخ أو أكل عملته"],["شو أكتر تريند حبيته على السوشيال ميديا؟"],["شو الهواية اللي بتحب تجربها وما جربتها؟"],["احكي عن مرة كنت البطل بالغلط وبعدين اكتشفت العكس"],["احكي عن مرة خربت جو المجموعة بدون ما تقصد"],["مين من الموجودين بتسأله نصيحة بسرعة؟"],["احكي عن أسوأ توقيت رنّ فيه جوالك"],["احكي عن مرة غشّيت أو حاولت تغش"],["شو الشي اللي بتأجله دايمًا لآخر لحظة؟"],["احكي عن مرة حكيت قصة وزيّدتها شوي والكل صدق"],["احكي عن مرة ضعت أو تهت فيها"],["مين من الموجودين بتحسه بيعرف يمثّل؟"],["احكي عن أسوأ كابوس أو حلم غريب"],["احكي عن مرة حاولت تجامل وانفضحت إنك مجامل"],["شو أكتر شي بيضحكك بدون سبب واضح؟"],["احكي عن مرة دوّرت على شي ساعات وطلع قدامك"],["احكي عن مرة رديت على رسالة بعد أسبوع وفشلت تبرر"],["مين من الموجودين بتتصور يصير أب/أم صارم؟"],["احكي عن مرة تعلّقت بمسلسل أو لعبة زيادة عن اللزوم"],["احكي عن مرة غنيت قدام ناس وكانت كارثة"],["شو العادة الغبية اللي بتعملها كل يوم بدون تفكير؟"],["شو أسلوبك للتهرب من موقف محرج؟"],["احكي عن مرة فاجأت حدا وكانت ردة فعله عكس المتوقع"],["مين من الموجودين أكتر واحد يؤجل الرد على الرسائل؟"],["احكي عن أحلى صدفة صارت معك"],["احكي عن مرة كنت مظلوم وضحكت بعدين من القصة"],["شو الشي اللي بتفتخر فيه وما حدا بيعرف عنه؟"],["احكي عن مرة اتخانقت على شي تافه وندمت"],["احكي عن أسوأ مرة استخدمت ترجمة أو كتبت بالغلط"],["احكي عن مرة فرحت فرحة مجنونة بشي تافه والكل استغرب"]];
 const AAMEL=[["اعمل حركة وحدة بتزم تمها يمين وشمال طول الدور لعند ما يرجعلك الدور والحركة بين دور كل لاعب ولو نسيت بيروح عليك الدور الجاي"],["اعمل حركة شخص بده يعطس ومش طالعة وبيحاول يجيبها بكل الطرق"],["اعمل عطسة كبيرة ومفاجئة"],["اعمل حركة شخص مبين انه مركز وهو مش فاهم حاجة"],["اعمل حركة شخص ماسك حاله بالغصب عن الحمام وأخوه جوة"],["اعمل مشهد انك مزنوق جدا وبدك حمام في دولة اجنبية وبتعرفش لغتها لمدة 30 ثانية"],["اعمل مشهد شخص منافق بوجهين"],["اعمل حركة شخص صابته حكة بكل جسمه لمدة 30 ثانية"],["اعمل حركة واحد أصلع بيرتب الشعرات الباقية"],["قلّد صوت قطة بتتخانق مع قطة تانية"],["قلّد صوت بطة بتنادي على فراخها ليسبحوا"],["قلّد صوت جاجة بدها تبيض والبيضة معسقة لمدة 20 ثانية"],["قلد صوت شحن بيغير غيارات بالجير مع صوت الهوا اللي بطلع"],["قلّد صوت واحد من الموجودين مع طريقة كلامه"],["قلّد أبوك لما يعصب"],["قلد صوت ضحكة خليعة مع هز كتاف لعند ما يرجعلك الدور والحركة بين دور كل لاعب ولو نسيت بيروح عليك الدور الجاي"],["قوم قلد دور بنت بتحاول توقع شب واختار حدا من الموجودين لدور الشب"],["قلّد صوت واحد مزكم لمدة لفة كاملة واحكي كم كلمة  بين دور كل لاعب ولو نسيت بيروح عليك الدور الجاي"],["قلّد صوت إنك بتاكل شيبس لعند اخر حبة ولما بنمصمص اصابعك"],["قلّد صوت كلب ماكل كتلة"],["قلّد صوت جاجة عاملة طوشة على حدا سرق بيضها"],["قلّد صوت بطة عاملة طوشة"],["قلّد صوت طفل يبكي"],["قلّد أمك وهي بتبهدلك لأنك وسخت أواعيك"],["قلّد أبوك وهو بيبهدلك على علاماتك"],["قلّد ستك وهي ظهرها بيوجعها"],["قلّد سيدك اللي فاهم بكل شيء"],["اقلد أمك وهي بتحكي موضوع بتحكيه كل يوم"],["قلّد أستاذ من أساتذتك وهو بيشرح"],["احكي بلهجة مصرية مع واحد من الموجودين دقيقة"],["احكي صعيدي كأنك هربان وبدك حماية من ثار"],["احكي لبناني وإنك بتطلب فطور من مطعم مصري ومثل الدورين"],["احكي كأنك إيطالي واطلب بيتزا"],["سكر مناخيرك واحكي كأنك أخنف لمدة دقيقة"],["طلع لسانك واحكي مع حدا 20 ثانية"],["احكي وانت حاول عينك وشادد دنيك لبرة لمدة 30 ثانية"],["قلّد نبرة رجال عجوز معصب"],["قلّد نبرة عجوزة نقاقة على كل حاجة لمدة 30 ثانية"],["قلّد صوت شخص غاضب من الموجودين"],["قلّد ضحكة أحد الموجودين"],["قلّد شخص مشهور لمدة ١٥ ثانية"],["قلّد ممثل بالضبط ويحكموا الحاضرين على ادائك"],["قلّد سائق حافلة بينادي على الركاب"],["غمض عيونك وارسم بيت على ورقة"],["غمض عيونك وارسم وجه"],["غمض عيونك وارسم بطة"],["اعمل احتفال رونالدو بالهدف"],["ارقص سامبا ١٥ ثانية"],["قوم احضن أي عمود وارفع رجلك لورا وانت بتبوس فيه وبتقوله بحبك"],["اعمل معتوه لمدة لفة كاملة ولو نسيت ما تلعب الدور اللي وراه"],["مثّل إنك بتاخد حقنة وأنت مرعوب قدام الكل"],["اعمل وجه مرعب للدور الجاي"],["قوم اعمل شكل مرعب بوجهك وخلي حدا يصورك انت بتختاره"],["مثل انك لابس كعب عالي وانكسر وانت رايح الحفلة"],["مثّل إنك بتحاول تخفي إنك جعان وانت عند ناس حاطين أكل"],["مثّل إنك نسيت اسم شخص وأنت بتعرّف عليه"],["مثل مشهد اثنين اكذب من بعض لمدة 30 ثانية"],["مثّل مشهد اثنين بيلحنوا على بعض بدون ما يحكوا مباشر مع بعض واختار حدا من الموجودين ليكون الوسيط اللي بينحكى اله"],["مثّل إنك بتحاول تعاكس وحدة بالشارع بطريقة بلدي واختار حدا من الموجودين ليكون الوحدة"],["مثّل انك زوجة زوجها روح متأخر على البيت وزوجتك بتحقق معك واختار حدا من الموجودين ليكون الزوج"],["مثّل بلغة الاشارة لواحد من الموجودين انت اختاره جملة  من 4 كلمات لمدة 30 ثانية ولو ما عرفها بتخسر النقطة"],["قوم اكتب على الأرض وانت بتمك قلم جملة معلش احنا بنتبهدل"],["اكتب جملة من كلمتين على ظهر حدا من القاعدين ولو ما عرفها ب30 ثانية بتخسر النقطة"],["مثّل  لمدة 30 ثانية إنك سكران ومروح لأبوك واختار أبوك واحد من الحاضرين"],["مثّل انك بتغسل سيارات لمدة 30 ثانية"],["مثّل إنك بتسلك مجراية لمدة 30 ثانية ومش راضية تسلك"],["مثل انك براسك قمل وضلك اهرش  لعند ما يرجعلك الدور والحركة بين دور كل لاعب ولو نسيت بيروح عليك الدور الجاي"],["مثل دور وحدة قفشت زوجها بيحطي مع بنات لمدة 30 ثانية واختار الزوج من الحضور"],["قوم جيب كلينكس من اي حدا من جيرانكم او طاولة جنبكم"],["قلد شخصية ةخلي حدا من الموجودين تختاره يعرفها لمدة 30 ثانية ولو ما عرفها بتخسر النقطة"],["تقمص شخصية مدير قليل ادب عينه عالسكرتيرة واختار حدا ليكون السكرتيرة"],["مثّل إنك بنطلونك مفروط وبدك تخبيه لمدة دور كامل واذا نسيت بيروح عليك الدور الجاي"],["اكتب بتمك على ورقة وانت مغمض اسمك بالكامل"],["مثّل إنك فزت باليانصيب هلق قدام الكل"],["اعمل صوت 3 حيوانات"],["امشي كأن الأرض نار تحت رجليك لنهاية الغرفة وارجع"],["مثّل إنك بتعطي خطاب رئاسي والجمهور نائم"],["مثّل مكالمة مع المدير — اختار حدا من الموجودين يكون المدير وأنت مرعوب"],["ارقص مثل مايكل جاكسون لمدة 30 ثانية"],["قول اسم كل اللاعبين بالمقلوب خلال دقيقة"],["مثّل إنك أكلت فلفل حار جدًا وبدك مي وبتطلب من الحضور ومش راضيين"],["اعمل إعلان عن فرشاة أسنان كأنك ممثلة دلّوعة"],["اختار لاعب وقلّده لحد ما يخمنوا مين"],["مثّل إنك بتبيع حصان بالسوق الشعبي"],["اعمل وجه 4 مشاعر: فرح، غضب، خوف، حب — ورا بعض"],["احكي كأنك روبوت لـ 30 ثانية"],["مثّل موقف إنك بتطارد ذبابة أو بعوضة وبتحاول تقتلها"],["مثّل إنك بتاخد صورة جماعية والكل يتحرك"],["اعمل حركة غوريلا انتصر بمعركة"],["مثّل مشهد إن جوالك وقع بالمرحاض"],["مثّل إنك بتطلب زيادة راتب من أبوك/مديرك"],["مثّل إنك بتعلم طفل يمشي وهو بوقع كل شوي"],["مثّل إنك فتحت ثلاجة فاضيّة وأنت جعان موت"],["مثّل إنك بتغني في الحمام والماي خلصت"],["مثّل كأنك بطل فيلم هندي بتنطخ ولسّة مكمل"],["ارقص باليه لمدة 15 ثانية"],["احكي جملة من أربع كلمات بالمقلوب وإذا ما عرفها حدا من الحضور بتروح النقطة"],["مثّل إنك بدك رقم بنت وخجلان تطلبه وحتموت لو ما أخدته"],["اختار لاعب وقلّد احتفاليته بالهدف"],["مثّل إنك بتشرح للشرطي ليش سرعتك زايدة"],["مثّل إنك بتحاول تقنع القطة تنزل عن الطاولة وهي مش سامعاك"],["جيب مقطع من فيلم ومثّله ولازم حدا من الحضور يعرفه وإلا راحت النقطة"],["مثّل إنك بتدور على جوربك الضائع قبل خروج مهم"],["مثّل إنك اكتشفت إن في كاميرا بتسجّل عليك من ساعة"],["اعمل مؤثرات صوتية لفيلم أكشن لمدة 20 ثانية"],["مثّل إنك دخلت عزيمة رسمية وأنت ناسي تغيّر ملابس البيت"],["مثّل إنك قدام برنامج مواهب والحكام من اللاعبين (٢ أو ٣)"],["مثّل إنك بتحاول تعلّق صورة على الحيط وكل شي بوقع"],["مثّل إنك بتصور فيديو لتيك توك والفيديو بيفشل ٣ مرات"],["مثّل إنك شفت غريمك بالشارع وبتعمل حالك مش شايفه بمبالغة"],["اخطب بالناس ٢٠ ثانية عن الجرابين بحماس خطير"],["مثّل إنك بتطلب من الجيران يهدوا الصوت وأنت مرعوب منهم"],["اعمل وجه إنك شميت ريحة غريبة وشاكك باثنين جنبك لمدة ١٥ ثانية"],["مثّل إنك ركضت ورا الباص وما لحقته قدام الكل"],["حاول تروي قصة مخيفة وأنت محبوس الضحك"],["اعمل درس درامي عن «كيف تصب المي بالكباية» لمدة ٣٠ ثانية"],["مثّل إنك سمعت صوت بالبيت بالليل وبتحاول تشوف شو هو"],["مثّل إنك لقيت فلوس بالشارع وطلعت فلوس لعبة"],["مثّل إنك انمسكت وأنت تغش بالامتحان"]];
 
-const WIN=20;            // خط النهاية
+
+/* ---------- بطاقات جديدة — {p} = لاعب بيختاره التطبيق بعدل ---------- */
+QOUL.push(...[
+["احكي عن آخر مرة كذبت فيها على أهلك وشو كانت الكذبة بالزبط"],
+["شو أكتر إشي بتغار منه عند {p}؟ وبصراحة"],
+["لو بدك تبدّل حياتك يوم كامل مع حدا من الموجودين، مين؟ وشو أول إشي بتعمله؟"],
+["احكي عن أكتر موقف انحرجت فيه قدام حدا بيهمك رأيه"],
+["شو الإشي اللي لو أهلك عرفوه عنك هلقيت بتنفضح؟ (احكي نسخة خفيفة منه 😅)"],
+["قيّم {p} من ١٠ بخفة الدم، وبرّر الرقم قدامه"],
+["احكي عن آخر مرة عيّطت فيها وليش"],
+["مين من الموجودين أكتر واحد بيبالغ بالحكي؟ واحكي مثال عليه"],
+["شو أغبى قرار أخدته بحياتك وكان ممكن تتجنبه بسهولة؟"],
+["اعترف: مين آخر واحد عملتله بلوك وليش؟"],
+["شو الإشي اللي بتعمله على السوشال ميديا وبتنكر إنك بتعمله؟"],
+["لو {p} بده يتجوز بكرا، شو النصيحة اللي بتعطيه إياها قدام الكل؟"],
+["احكي عن مرة دافعت عن حدا وطلع هو الغلطان"],
+["شو الإشي اللي بتكرهه بحالك وبتحاول تخبيه؟"],
+["مين من الموجودين بتحس إنه بيفهمك من غير حكي؟"],
+["احكي عن أكبر مقلب انعمل فيك ولسا ما سامحت صاحبه"],
+["لو معك مليون دولار هلقيت، شو أول ٣ إشيات بتعملهم؟ بالزبط"],
+["احكي عن أكتر لحظة حسيت فيها إنك بطل"],
+["شو الكلمة اللي لو حدا حكالك إياها بتولّع؟"],
+["اعترف بإشي عملته من ورا ظهر {p} (إشي خفيف 😏)"],
+["احكي عن أول مصاري كسبتهم بتعبك، شو عملت فيهم؟"],
+["مين من الموجودين لو صار مديرك بتستقيل من أول يوم؟ وليش؟"],
+["احكي عن حلم بتستحي تحكيه للناس"],
+["شو أسوأ عادة عند {p}؟ احكيها بلطف… أو لا 😈"],
+["احكي عن مرة حسيت فيها إنك ظلمت حدا"],
+["شو أغرب إشي بتخاف منه وبتعرف إنه سخيف؟"],
+["لو بدك تحكي سر واحد بس الليلة، شو هو؟"],
+["مين آخر واحد حكيت عنه من وراه؟ وشو حكيت؟"],
+["احكي عن أكتر مرة طلعت فيها من مشكلة بأعجوبة"],
+["لو بتقدر تمحي ذكرى وحدة من راسك، شو هي؟"],
+["مين من الموجودين بتختاره شريكك بمشروع؟ ومين مستحيل؟"],
+["شو أكتر أكلة غزاوية بتحبها؟ واقنعنا إنها أطيب أكلة بالدنيا"],
+["احكي عن آخر مرة انحرجت فيها من أهلك قدام صحابك"],
+["شو الإشي اللي بتتمنى {p} يعرفه عنك؟"],
+["احكي ٣ إشيات صح وإشي واحد كذب عن حالك، والباقيين يخمنوا الكذبة"]
+]);
+AAMEL.push(...[
+["خلّي {p} يحكيلك جملة، وإنت عيدها بصوت مذيع أخبار عاجلة"],
+["اعمل بث مباشر وهمي كإنك مؤثر مشهور وعرّف متابعينك على الموجودين واحد واحد"],
+["قلّد {p} وهو بيصحى من النوم الصبح، والكل يحكم"],
+["اعمل مزاد علني وبيع شبشب {p} بأعلى سعر — لازم تقنع الحضور يزايدوا"],
+["مثّل إنك بتقدّم نشرة الطقس وفي منخفض جاي على غزة بحماس زيادة عن اللزوم"],
+["غنّي أغنية مشهورة بس بدّل كل كلماتها لـ «يا عمّي»"],
+["اعمل ١٥ قرفصاء وإنت بتعدّ بصوت عالي بالمقلوب"],
+["اعمل إعلان دعائي عن {p} كإنه منتج للبيع، ٣٠ ثانية"],
+["امشي مشية عارض أزياء رايح جاي بوجه جدي، والكل يصفّق"],
+["خلّي {p} يختارلك ٣ كلمات، وإنت ألّف فيهم زجل أو شعر هلقيت"],
+["احكي مع {p} ٣٠ ثانية بس بالأسئلة — إذا جاوبت بإشي مش سؤال بتخسر"],
+["مثّل بياع بالسوق بيدلّل على بضاعته و{p} زبون بيفاصل معه"],
+["اعمل صوت ماتور سيارة بيشتغل الصبح بالشتا وما راضي يدور"],
+["حط إيديك ورا ظهرك واشرب مي من الكاسة بتمّك بس"],
+["قول أسماء ١٠ أكلات بأقل من ٢٠ ثانية بدون ما تعلق"],
+["اعمل حالك معلّق رياضي وعلّق على {p} وهو بيقوم يجيب مي"],
+["ارقص دبكة لحالك ٢٠ ثانية والكل يصفّق أو يزغرد"],
+["قلّد ٣ أشخاص من الموجودين ورا بعض، والكل يخمن مين"],
+["اعمل مقابلة صحفية مع {p} كإنه نجم عالمي، واسأله ٣ أسئلة محرجة"],
+["احكي كل كلامك كإنك بتغنّي أوبرا لحد ما يرجعلك الدور — لو نسيت بيروح عليك الدور الجاي"],
+["خلّي الحضور يختارولك حيوان، وتقمّصه ٣٠ ثانية"],
+["مثّل إنك سواق تاكسي والركاب (اختار ٢ من الموجودين) بيتخانقوا على الأجرة"],
+["حاول تضحّك {p} خلال ٣٠ ثانية بدون ما تلمسه — إذا ما ضحك بتخسر النقطة"],
+["اعمل وصلة طبل ٢٠ ثانية على صحن فاضي أو الطاولة"],
+["ابعت رسالة صوتية (وهمية قدام الكل) لأستاذك القديم تعتذرله عن كل إشي عملته"],
+["اعمل وجه ثابت والكل بيحاول يضحّكك ٣٠ ثانية — إذا ضحكت بتخسر"],
+["قلّد صوت ٣ زوامير سيارات مختلفة وصوت شرطي المرور بيصفّر"],
+["مثّل إنك ستّ بتتصل على ابنها المغترب فيديو والنت بيقطع كل شوي"],
+["اعمل خطاب حماسي لـ {p} كإنه داخل على نهائي كاس العالم"],
+["اعمل ١٠ ضغط، ومع كل ضغطة احكي اسم حدا من الموجودين وصفة حلوة فيه"],
+["مثّل إنك نسيت الامتحان اليوم ووصلت متأخر، و{p} هو الأستاذ اللي بيحقق معك"],
+["اعمل حركة روبوت بيرقص لحد ما حدا يقلك وقّف"],
+["احكي قصة قصيرة كل كلمة فيها بتبلّش بالحرف اللي بيختاره {p}"],
+["مثّل عرس غزاوي: إنت المطرب والعريس والعروس بنفس الوقت"],
+["خلّي {p} يرسم على إيدك إشي بالقلم، وممنوع تمسحه لآخر اللعبة"],
+["إنت المسحّراتي: قلّد صوت الطبل ونادي على الموجودين بأساميهم"],
+["اعمل حالك نايم والكل يحاول يصحّيك بدون لمس ٢٠ ثانية — إذا تحركت أو ضحكت بتخسر"],
+["مثّل ريلز ٣٠ ثانية عن «لما الكهربا تيجي بعد ٨ ساعات»"],
+["اعمل حالك {p} وعرّف عن حالك بأسلوبه ٢٠ ثانية"],
+["احكي الحروف الأبجدية بالعكس من الياء للألف بدون ما تغلط"]
+]);
+const DUELS=[
+"بحلقة: إنت و {p} بتبحلقوا بعيون بعض — أول واحد بيضحك أو بيشيح بعيونه بيخسر",
+"ليّ ذراع بينك وبين {p}",
+"حجرة ورقة مقص مع {p} — أحسن من ٣",
+"بالدور مع {p}: أسماء دول — اللي بيعلق ٣ ثواني أو بيعيد اسم بيخسر",
+"مين بيوقف على رجل وحدة أطول: إنت ولا {p}؟",
+"إنت و {p}: كل واحد بيقلّد حيوان، والحضور بيحكموا مين أحسن",
+"بالدور مع {p}: أسماء أكلات — اللي بيعلق ٣ ثواني بيخسر",
+"إنت و {p}: مين بيحكي جملة أطول بنفس واحد",
+"مسابقة نكت مع {p}: كل واحد نكتة، والحضور بيحكموا",
+"إنت و {p}: مين بيعمل أبشع وجه — الحضور بيحكموا",
+"ضحّكني بضحّكك: كل واحد ٢٠ ثانية بيحاول يضحّك التاني — اللي بيضحك أول بيخسر",
+"إنت و {p}: عدّوا من ٣٠ لـ ١ بالمقلوب بأسرع وقت — الحضور بيوقّتوا",
+"بالدور مع {p}: كلمات بتبلّش بحرف الميم — اللي بيعلق بيخسر",
+"إنت و {p}: مين بيقلّد صوت مطرب مشهور أحسن — الحضور بيحكموا"
+];
+const GROUP=[
+"الكل يوقف على رجل وحدة — آخر واحد بيضل واقف بيفوز",
+"كل واحد يحكي أسخف نكتة عنده — الحضور بيختاروا الأحلى",
+"كل واحد يقلّد صوت حيوان — صاحب الدور بيختار الأحسن",
+"الكل ساكت وبيبحلق ببعض — آخر واحد بيضل ماسك ضحكته بيفوز",
+"بالدور: أسماء لاعبين كورة — اللي بيعلق بيطلع، آخر واحد بيفوز",
+"كل واحد يعمل أحلى حركة رقص ١٠ ثواني — الكل بيصوّت للأحسن",
+"بالدور: كلمات بتبلّش بحرف الشين — اللي بيعلق بيطلع، آخر واحد بيفوز",
+"كل واحد يحكي أغرب كذبة صدّقها بحياته — الأغرب بيفوز",
+"بالدور: أسماء مناطق وأحياء بغزة — اللي بيعلق بيطلع، آخر واحد بيفوز",
+"كل واحد يقلّد حدا من الموجودين ١٠ ثواني — أحسن تقليد بيفوز"
+];
+const TARGETS=[10,15,20,30,50];
+const TARGET_LABEL={10:"خاطفة",15:"سريعة",20:"عادية",30:"طويلة",50:"ماراثون"};
+const TARGET_COLS={10:6,15:6,20:7,30:8,50:9};
+const TARGET_SURPRISES={10:3,15:5,20:8,30:10,50:15};
+const TARGET_KEY="qw_target";
+let WIN=20;              // خط النهاية (بيتغير حسب اختيار اللاعبين)
+let SURPRISE_COUNT=8;    // عدد مربعات المفاجآت (بيتحسب حسب الهدف)
+let COLS=7;              // أعمدة اللوحة
 const TIMER_MAX=60;      // ثواني التايمر
 const SPEED_WINDOW=20;   // خلّص بأول كم ثانية لتاخد +1 سرعة
-const SURPRISE_COUNT=8;  // عدد مربعات المفاجآت
-const COLS=7;            // أعمدة اللوحة
 const COLORS=["#38bdf8","#f59e0b","#22c55e","#f43f5e","#a78bfa","#f472b6","#2dd4bf","#facc15"];
 const NAMES_KEY="qw_saved_names";
 
@@ -437,7 +570,9 @@ const SPECIAL_CARDS=[
   {id:"on_player",title:"🎭 على لاعب",pts:1,refuse:-1},
   {id:"bomb",title:"💣 قنبلة",pts:3,refuse:-2},
   {id:"all_vote",title:"🪞 تصويت",text:"احكي قصة محرجة صارت معك — الباقيين بيصوّتوا إذا صدقوك. أغلبية صدقوك = +2، غير هيك 0",pts:2,refuse:-1},
-  {id:"swap_fate",title:"🎰 قدّر الحظ",text:"ارمي العملة واستنى حظك: 👑 صورة = +2 · ✍️ كتابة = −1",pts:2,refuse:-1}
+  {id:"swap_fate",title:"🎰 قدّر الحظ",text:"ارمي العملة واستنى حظك: 👑 صورة = +2 · ✍️ كتابة = −1",pts:2,refuse:-1},
+  {id:"duel",title:"⚔️ مواجهة",pts:2,refuse:-1,w:3},
+  {id:"group",title:"🌪️ تحدي جماعي",pts:2,refuse:0,w:2}
 ];
 const BOMB_FIXED=[
   "ارقص مثل مايكل جاكسون لمدة 30 ثانية بدون ما توقف",
@@ -459,6 +594,8 @@ let pendingExtra=null,resumeFrom=null,drawsCount=0,crazyLeft=0,crazyTriggered=fa
 let turn=null,turnTimer=null;
 let voteCfg=null,votes={},voteRound=0;
 let pickerLocked=false;
+let stats={}; // عدّاد العدل لكل لاعب
+let target=loadTarget();
 
 /* ---------- أدوات ---------- */
 const $=id=>document.getElementById(id);
@@ -477,6 +614,62 @@ function toast(m,cls){toastQ.push([m,cls]);if(toastQ.length>3)toastQ.splice(0,to
 function nextToast(){const it=toastQ.shift();const t=$("toast");if(!it){toastBusy=false;return;}toastBusy=true;t.textContent=it[0];t.className="toast show"+(it[1]?" "+it[1]:"");setTimeout(()=>{t.classList.remove("show");setTimeout(nextToast,220);},1500);}
 
 function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");if(id==="screenGame")requestAnimationFrame(drawPath);}
+
+/* ---------- العدل بالتوزيع ---------- */
+function st(i){const n=players[i].name;return stats[n]||(stats[n]={qoul:0,aamel:0,special:0,targeted:0,last:[],lastSpecial:null});}
+// بيختار لاعب من غير المستثنين — دايمًا اللي أقل واحد انذكر، وبالقرعة إذا تساووا
+function fairTarget(excl){
+  const pool=players.map((p,i)=>i).filter(i=>!excl.includes(i));
+  if(!pool.length)return null;
+  const min=Math.min(...pool.map(i=>st(i).targeted));
+  const t=rand(pool.filter(i=>st(i).targeted===min));
+  st(t).targeted++;
+  return t;
+}
+// قول ولا اعمل: بيميل للنوع اللي أخده اللاعب أقل، وما بيعطي نفس النوع ٣ مرات ورا بعض
+function pickKind(i){
+  const s=st(i),l=s.last;
+  if(l.length>=2&&l[l.length-1]===l[l.length-2])return l[l.length-1]==="qoul"?"aamel":"qoul";
+  const pq=Math.min(.85,Math.max(.15,.5-.18*(s.qoul-s.aamel)));
+  return Math.random()<pq?"qoul":"aamel";
+}
+function noteKind(i,k){const s=st(i);s[k]++;s.last.push(k);if(s.last.length>3)s.last.shift();}
+function specialChance(i){const min=Math.min(...players.map((p,j)=>st(j).special));return st(i).special>min?0.06:0.18;}
+function pickSpecial(i){
+  const s=st(i),pool=[];
+  SPECIAL_CARDS.forEach(c=>{if(c.id!==s.lastSpecial)for(let k=0;k<(c.w||1);k++)pool.push(c);});
+  const sp=rand(pool);s.special++;s.lastSpecial=sp.id;return sp;
+}
+function fillTargets(lines,owner){
+  let tgt=null;
+  const out=lines.map(l=>{
+    if(!String(l).includes("{p}"))return l;
+    if(tgt==null)tgt=fairTarget([owner]);
+    return tgt==null?String(l).split("{p}").join("حدا من الموجودين"):String(l).split("{p}").join("⟦"+players[tgt].name+"⟧");
+  });
+  return{lines:out,target:tgt};
+}
+function endZoneStart(){return WIN-Math.max(2,Math.round(WIN*0.1));}
+
+/* ---------- الهدف ---------- */
+function loadTarget(){try{const v=+localStorage.getItem(TARGET_KEY);return TARGETS.includes(v)?v:20;}catch(e){return 20;}}
+function saveTarget(v){try{localStorage.setItem(TARGET_KEY,String(v));}catch(e){}}
+function applyTarget(){
+  WIN=target;COLS=TARGET_COLS[WIN]||7;SURPRISE_COUNT=TARGET_SURPRISES[WIN]||8;
+  $("boardGrid").style.gridTemplateColumns="repeat("+COLS+",minmax(0,1fr))";
+  $("board").classList.toggle("dense",COLS>=8);
+  $("boardLegend").textContent="🏁 بداية · ❓ مفاجأة · 🏆 "+WIN;
+  document.querySelectorAll(".winNum").forEach(e=>e.textContent=WIN);
+}
+function renderTargets(){
+  const box=$("targets");box.innerHTML="";
+  TARGETS.forEach(v=>{
+    const b=el("button","target-btn"+(v===target?" on":""));
+    b.append(el("b",null,String(v)),el("small",null,TARGET_LABEL[v]));
+    b.onclick=()=>{target=v;saveTarget(v);applyTarget();renderTargets();};
+    box.appendChild(b);
+  });
+}
 
 /* ---------- الأسماء المحفوظة ---------- */
 function loadSaved(){try{const a=JSON.parse(localStorage.getItem(NAMES_KEY)||"[]");return Array.isArray(a)?a.filter(x=>typeof x==="string"&&x.trim()):[];}catch(e){return[];}}
@@ -584,6 +777,8 @@ function startGame(){
   currentPlayerIdx=0;playerBuffs={};triggeredSurprises={};voteRequestLeft={};stealLeft={};lastPos={};
   players.forEach(p=>{triggeredSurprises[p.name]={};voteRequestLeft[p.name]={qoul:true,aamel:true};stealLeft[p.name]=true;lastPos[p.name]=0;});
   pendingExtra=null;resumeFrom=null;drawsCount=0;crazyLeft=0;crazyTriggered=false;endgameAnnounced=false;gameOver=false;
+  stats={};
+  applyTarget();
   generateSurpriseCells();
   $("winOverlay").classList.remove("show");
   resetCardView();
@@ -607,12 +802,12 @@ function renderBoard(){
     if(i===0){c.classList.add("start");ico="🏁";}
     else if(i===WIN){c.classList.add("finish");ico="🏆";}
     else if(surpriseCells[i]){c.classList.add("surprise");ico="❓";}
-    else{ico=String(i);if(i>=WIN-2)c.classList.add("zone-end");}
+    else{ico=String(i);if(i>=endZoneStart())c.classList.add("zone-end");}
     c.appendChild(el("span","ico",ico));
     const here=[];players.forEach((p,pi)=>{if(Math.min(p.score,WIN)===i)here.push(pi);});
     if(here.length){
       c.classList.add("occupied");
-      if(here.length>2)c.classList.add("many");
+      if(here.length>1)c.classList.add("many");
       if(here.length>4)c.classList.add("crowd");
       here.forEach(pi=>{
         const p=players[pi];
@@ -695,13 +890,16 @@ function resolveBombText(){
 function drawCard(){
   if(turn||gameOver)return;
   drawsCount++;
-  if(drawsCount>2&&crazyLeft===0&&Math.random()<0.12){startSpecial(rand(SPECIAL_CARDS));return;}
-  const kind=crazyLeft>0?"aamel":(Math.random()<0.5?"qoul":"aamel");
+  const owner=currentPlayerIdx;
+  if(drawsCount>2&&crazyLeft===0&&Math.random()<specialChance(owner)){startSpecial(pickSpecial(owner));return;}
+  const kind=crazyLeft>0?"aamel":pickKind(owner);
+  noteKind(owner,kind);
   if(!decks[kind].length)decks[kind]=freshDeck(kind);
   const idx=decks[kind].pop();
   const crazy=crazyLeft>0;if(crazy)crazyLeft--;
   const base=kind==="qoul"?1:2;
-  turn={kind,special:null,lines:(kind==="qoul"?QOUL:AAMEL)[idx].slice(),crazy,actorIdx:null,timerStarted:false,startedAt:0,locked:false,
+  const f=fillTargets((kind==="qoul"?QOUL:AAMEL)[idx],owner);
+  turn={kind,special:null,lines:f.lines,target:f.target,crazy,actorIdx:null,timerStarted:false,startedAt:0,locked:false,
     badge:kind==="qoul"?"🗣️ قول":"🎭 اعمل",
     ptsLabel:(kind==="qoul"?"⭐ قول: ":"⭐ اعمل: ")+"+"+(crazy?base*2:base)+" إذا عملتها · −1 إذا امتنعت"+(crazy?" · 🌪️ ×2":"")};
   showCard();
@@ -711,9 +909,12 @@ function startSpecial(sp){
   if(sp.id==="bomb")lines=[resolveBombText()];
   else if(sp.id==="double_challenge")lines=resolveDoubleChallengeText();
   else if(sp.id==="on_player")lines=["اختار لاعب ينفّذ هاد التحدي عنك:","🎭 "+rand(AAMEL)[0]];
+  else if(sp.id==="duel")lines=["⚔️ "+rand(DUELS)];
+  else if(sp.id==="group")lines=["🌪️ الكل بيشارك:",rand(GROUP)];
   else lines=[sp.text];
-  const labels={swap_fate:"🪙 صورة +2 · كتابة −1",all_vote:"⭐ صدقوك +2 · ما صدقوك 0 · امتناع −1",on_player:"⭐ عملها: +1 إله · رفض: −1 إله و +1 إلك"};
-  turn={kind:"special",special:sp,lines,crazy:false,actorIdx:null,timerStarted:false,startedAt:0,locked:false,
+  const f=fillTargets(lines,currentPlayerIdx);lines=f.lines;
+  const labels={swap_fate:"🪙 صورة +2 · كتابة −1",all_vote:"⭐ صدقوك +2 · ما صدقوك 0 · امتناع −1",on_player:"⭐ عملها: +1 إله · رفض: −1 إله و +1 إلك",duel:"⭐ الفايز +2 · الخسران −1 · الانسحاب −1",group:"⭐ الفايز +2"};
+  turn={kind:"special",special:sp,lines,target:f.target,crazy:false,actorIdx:null,timerStarted:false,startedAt:0,locked:false,
     badge:sp.title,ptsLabel:labels[sp.id]||("⭐ نجاح +"+sp.pts+" · امتناع "+sp.refuse)};
   showCard();
 }
@@ -726,7 +927,12 @@ function showCard(){
   $("emptyState").style.display="none";$("cardContent").style.display="block";
   $("badge").textContent=t.badge;$("ptsLabel").textContent=t.ptsLabel;
   const area=$("stepsArea");area.innerHTML="";
-  t.lines.forEach(line=>{if(String(line).trim())area.appendChild(el("div","step-text",String(line).trim()));});
+  t.lines.forEach(line=>{
+    const txt=String(line).trim();if(!txt)return;
+    const d=el("div","step-text");
+    txt.split(/⟦|⟧/).forEach((part,k)=>{if(part)d.appendChild(k%2?el("span","tgt",part):document.createTextNode(part));});
+    area.appendChild(d);
+  });
   $("drawBtn").style.display="none";
   updateStats();updateEventBanner();
   if(t.special&&t.special.id==="on_player"){
@@ -743,16 +949,16 @@ function showCard(){
   showAnswerControls();
 }
 function showAnswerControls(){
-  const t=turn,coin=!!(t.special&&t.special.id==="swap_fate");
+  const t=turn,id=t.special&&t.special.id,coin=id==="swap_fate",duel=id==="duel",group=id==="group";
   $("answerRow").style.display="flex";
   $("doneBtn").style.display=coin?"none":"block";
-  $("refuseBtn").style.display=coin?"none":"block";
+  $("refuseBtn").style.display=(coin||group)?"none":"block";
   $("coinBtn").style.display=coin?"block":"none";
-  $("doneBtn").textContent=t.kind==="qoul"?"✅ قلتها":"✅ عملتها";
-  $("refuseBtn").textContent="❌ امتنعت";
+  $("doneBtn").textContent=duel?"🏁 خلصت المواجهة":group?"🏁 خلص التحدي":t.kind==="qoul"?"✅ قلتها":"✅ عملتها";
+  $("refuseBtn").textContent=duel?"🏳️ انسحبت":"❌ امتنعت";
   const tb=$("startTimerBtn");
   tb.style.display=coin?"none":"block";
-  tb.textContent="⏱️ ابدأ التايمر ("+TIMER_MAX+" ث) · خلّص بأول "+SPEED_WINDOW+" ث = +1";
+  tb.textContent=(duel||group)?"⏱️ ابدأ التايمر ("+TIMER_MAX+" ث)":"⏱️ ابدأ التايمر ("+TIMER_MAX+" ث) · خلّص بأول "+SPEED_WINDOW+" ث = +1";
   updateStealButton();
 }
 function stealAllowed(){
@@ -768,8 +974,10 @@ function openPicker(cfg){
   $("pickTitle").textContent=cfg.title;$("pickHint").textContent=cfg.hint||"";
   cfg.options.forEach(o=>{
     const b=el("button","pick-btn");
-    const dot=el("span","st-dot",initial(players[o.idx].name));dot.style.background=colorOf(o.idx);dot.style.width=dot.style.height="22px";
-    b.append(dot,o.label||players[o.idx].name);
+    if(o.idx!=null){
+      const dot=el("span","st-dot",initial(players[o.idx].name));dot.style.background=colorOf(o.idx);dot.style.width=dot.style.height="22px";
+      b.append(dot,o.label||players[o.idx].name);
+    }else b.append(o.label);
     b.onclick=()=>{hidePicker();o.onPick();};
     box.appendChild(b);
   });
@@ -817,6 +1025,23 @@ function voterIdxs(perf){return players.map((p,i)=>i).filter(i=>i!==currentPlaye
 function doDone(){
   if(!canAct())return;
   const t=turn,perf=performerIdx(),sp=t.special;
+  if(sp&&sp.id==="duel"){
+    lockTurn();
+    const a=currentPlayerIdx,b=t.target;
+    if(b==null){endTurn([]);return;}
+    openPicker({title:"🏆 مين فاز بالمواجهة؟",hint:"الفايز +2 · الخسران −1",cancellable:false,options:[
+      {idx:a,onPick:()=>endTurn([[a,2],[b,-1]])},
+      {idx:b,onPick:()=>endTurn([[b,2],[a,-1]])},
+      {label:"🤝 تعادل — ولا حدا",onPick:()=>endTurn([])}]});
+    return;
+  }
+  if(sp&&sp.id==="group"){
+    lockTurn();
+    openPicker({title:"🏆 مين فاز بالتحدي الجماعي؟",hint:"الفايز +2",cancellable:false,options:[
+      ...players.map((p,i)=>({idx:i,onPick:()=>endTurn([[i,2]])})),
+      {label:"🤷 ما حدا",onPick:()=>endTurn([])}]});
+    return;
+  }
   if(sp&&sp.id==="all_vote"){
     lockTurn();
     const voters=voterIdxs(perf);
@@ -843,6 +1068,7 @@ function doRefuse(timeout){
   if(!timeout)toast(rand(FUNNY_REFUSE),"no");
   const changes=[[perf,sp?sp.refuse:-1]];
   if(sp&&sp.id==="on_player")changes.push([currentPlayerIdx,1]);
+  if(sp&&sp.id==="duel"&&t.target!=null)changes.push([t.target,1]);
   endTurn(changes);
 }
 function doCoin(){
@@ -957,10 +1183,10 @@ function applySurprise(s,idx){
     case"lose2":p.score-=2;break;
     case"blackhole":p.score-=3;break;
     case"steal":{const pool=others.filter(o=>o.score>0);
-      if(pool.length){const v=rand(pool);v.score-=1;p.score+=1;msg="🏴‍☠️ سرقت نقطة من "+v.name+"!";}else msg="🏴‍☠️ ما لقيت حدا تسرق منه!";break;}
+      if(pool.length){const v=players[fairTarget(players.map((q,j)=>j).filter(j=>j===idx||players[j].score<=0))];v.score-=1;p.score+=1;msg="🏴‍☠️ سرقت نقطة من "+v.name+"!";}else msg="🏴‍☠️ ما لقيت حدا تسرق منه!";break;}
     case"duel":{const leader=others.slice().sort((a,c)=>c.score-a.score)[0];
       if(leader&&leader.score>0){leader.score-=1;p.score+=1;msg="⚔️ بارزت "+leader.name+" وسرقت نقطة!";}else msg="⚔️ المتصدر ما عنده نقاط!";break;}
-    case"gift":{const lucky=rand(others);lucky.score+=1;msg="🎁 أهديت نقطة لـ "+lucky.name+"!";break;}
+    case"gift":{const lucky=players[fairTarget([idx])];lucky.score+=1;msg="🎁 أهديت نقطة لـ "+lucky.name+"!";break;}
     case"tax":{if(p.score>0){const last=others.slice().sort((a,c)=>a.score-c.score)[0];p.score-=1;last.score+=1;msg="💸 ضريبة! نقطة لـ "+last.name+" (الأخير)";}else msg="💸 ما في ضريبة هالمرة";break;}
     case"party":players.forEach(pl=>pl.score+=1);msg="🥳 حفلة! كل اللاعبين +1";break;
     case"curse":others.forEach(pl=>pl.score=Math.max(0,pl.score-1));msg="😈 لعنة! كل المنافسين −1";break;
@@ -971,7 +1197,7 @@ function applySurprise(s,idx){
     case"jail":b.skipNext=true;msg="🔒 سجن! بتخسر دورك الجاي";break;
     case"double":b.double=true;msg="✨ نقطتك الجاية مضاعفة!";break;
     case"shield":b.shield=true;msg="🛡️ درع حماية من الخسارة الجاية";break;
-    case"swap":{const o=rand(others);const tmp=p.score;p.score=o.score;o.score=tmp;msg="🔀 بدّلت نقاطك مع "+o.name;break;}
+    case"swap":{const o=players[fairTarget([idx])];const tmp=p.score;p.score=o.score;o.score=tmp;msg="🔀 بدّلت نقاطك مع "+o.name;break;}
     case"equalize":{const avg=Math.round(players.reduce((s2,pl)=>s2+pl.score,0)/n);p.score=avg;msg="⚖️ صرت على متوسط الكل: "+avg;break;}
     case"stealVote":{const m=rand(["qoul","aamel"]);voteRequestLeft[name][m]=true;msg="🗳️ استرجعت حق طلب تصويت ("+(m==="qoul"?"قول":"اعمل")+")!";break;}
     case"revive":if(p.score<=2){p.score+=2;msg="💖 إنعاش! +2 لأنك ضعيف";}else{p.score+=1;msg="💖 دفعة خفيفة +1";}break;
@@ -998,8 +1224,8 @@ function nextSurprise(){
 /* ---------- نهاية الدور ---------- */
 function checkGameEvents(){
   const total=players.reduce((s,p)=>s+p.score,0),lead=Math.max(...players.map(p=>p.score));
-  if(!crazyTriggered&&(lead>=10||total>=30)){crazyTriggered=true;crazyLeft=3;toast("🌪️ جولة مجنونة! ٣ سحبات اعمل · النقاط ×2");sndCrowd();}
-  if(!endgameAnnounced&&lead>=WIN-2){endgameAnnounced=true;toast("🏁 النهاية قربت!");sndCrowd();}
+  if(!crazyTriggered&&(lead>=Math.ceil(WIN/2)||total>=Math.round(WIN*1.5))){crazyTriggered=true;crazyLeft=3;toast("🌪️ جولة مجنونة! ٣ سحبات اعمل · النقاط ×2");sndCrowd();}
+  if(!endgameAnnounced&&lead>=endZoneStart()){endgameAnnounced=true;toast("🏁 النهاية قربت!");sndCrowd();}
 }
 function findWinner(perf){
   const top=Math.max(...players.map(p=>p.score));
@@ -1113,6 +1339,7 @@ window.addEventListener("resize",()=>requestAnimationFrame(drawPath));
 
 /* ---------- تشغيل ---------- */
 $("setupSub").textContent=QOUL.length+" قول + "+AAMEL.length+" اعمل · 🗺️ خريطة ومفاجآت";
+applyTarget();renderTargets();
 renderSetup();
 (function splash(){
   let done=false;
