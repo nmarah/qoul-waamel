@@ -1,6 +1,6 @@
 // بيخلي اللعبة تشتغل بدون إنترنت بعد أول فتحة.
 // كل مرة في إنترنت بنجيب أحدث نسخة، وإذا ما في بنفتح النسخة المحفوظة.
-const CACHE = 'qoul-waamel-v3';
+const CACHE = 'qoul-waamel-v4';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './logo.png'];
 
 self.addEventListener('install', e => {
